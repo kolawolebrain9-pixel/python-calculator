@@ -1,0 +1,120 @@
+# This is a simple Snake game implemented in Python using Pygame.
+# To run this, you need to install Pygame: pip install pygame
+# Run the script, use arrow keys to control the snake, eat the food (red square), avoid walls and yourself.
+
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 600, 400
+GRID_SIZE = 20
+GRID_WIDTH = WIDTH // GRID_SIZE
+GRID_HEIGHT = HEIGHT // GRID_SIZE
+FPS = 10
+
+# Colors
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+
+# Directions
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
+
+class SnakeGame:
+    def __init__(self):
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Snake Game")
+        self.clock = pygame.time.Clock()
+        self.reset()
+
+    def reset(self):
+        self.snake = [(GRID_WIDTH // 2, GRID_HEIGHT // 2)]
+        self.direction = RIGHT
+        self.food = self.generate_food()
+        self.score = 0
+        self.game_over = False
+
+    def generate_food(self):
+        while True:
+            food = (random.randint(0, GRID_WIDTH - 1), random.randint(0, GRID_HEIGHT - 1))
+            if food not in self.snake:
+                return food
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.direction != DOWN:
+                    self.direction = UP
+                elif event.key == pygame.K_DOWN and self.direction != UP:
+                    self.direction = DOWN
+                elif event.key == pygame.K_LEFT and self.direction != RIGHT:
+                    self.direction = LEFT
+                elif event.key == pygame.K_RIGHT and self.direction != LEFT:
+                    self.direction = RIGHT
+                elif event.key == pygame.K_r and self.game_over:
+                    self.reset()
+
+    def update(self):
+        if self.game_over:
+            return
+
+        head_x, head_y = self.snake[0]
+        new_head = (head_x + self.direction[0], head_y + self.direction[1])
+
+        # Check collisions
+        if (new_head[0] < 0 or new_head[0] >= GRID_WIDTH or
+            new_head[1] < 0 or new_head[1] >= GRID_HEIGHT or
+            new_head in self.snake):
+            self.game_over = True
+            return
+
+        self.snake.insert(0, new_head)
+
+        if new_head == self.food:
+            self.score += 1
+            self.food = self.generate_food()
+        else:
+            self.snake.pop()
+
+    def draw(self):
+        self.screen.fill(BLACK)
+
+        # Draw snake
+        for segment in self.snake:
+            pygame.draw.rect(self.screen, GREEN, (segment[0] * GRID_SIZE, segment[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+        # Draw food
+        pygame.draw.rect(self.screen, RED, (self.food[0] * GRID_SIZE, self.food[1] * GRID_SIZE, GRID_SIZE, GRID_SIZE))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 25)
+        text = font.render(f"Score: {self.score}", True, WHITE)
+        self.screen.blit(text, (10, 10))
+
+        if self.game_over:
+            game_over_text = font.render("Game Over! Press R to restart", True, WHITE)
+            self.screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2))
+
+        pygame.display.flip()
+
+    def run(self):
+        while True:
+            self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(FPS)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
